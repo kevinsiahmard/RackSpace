@@ -1,0 +1,6 @@
+   db_user: 'db user'
+   db_pass: 'db pass'
+   wordpress_db: 'wordpress db name'
+   dbhost: 'your db IP or url'
+   php_version: php7.2
+

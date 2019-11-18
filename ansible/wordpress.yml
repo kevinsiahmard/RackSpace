@@ -1,0 +1,123 @@
+###########   RackSpace Assessment Task (part2) ###############
+#
+#
+#
+#
+---
+- hosts: webservers
+  become: yes
+  gather_facts: no
+  vars_files:
+          - vars.yml
+
+
+##########  list of tasks ######################
+  tasks:
+
+#################################################          
+# add extra repo for installing php7.2 
+# ##############################################
+  - name: Add extras repository
+    shell: yum-config-manager --enable extras
+
+  - name: Install docker-ce (centos) via amazon-linux-extras packages
+    shell: "amazon-linux-extras install php7.2 -y"
+
+#######################################################################
+# Installing apache, mysql-client
+#######################################################################
+
+  - name: Installing Complete LampStack
+    yum: name={{ item }} state=latest
+    with_items:
+    - httpd
+    - mysql  
+    - MySQL-python
+
+  - name: Restarting Apache
+    service: name={{ item }} state=restarted enabled=yes
+    with_items:
+    - httpd
+
+
+#######################################################################
+# Configuring Mysql And Creating Database for wordpress
+#######################################################################
+
+  - name: mysql-removing anon users.
+    mysql_user: login_host='{{dbhost}}' login_user='{{db_user}}' login_password='{{db_pass}}' name='' host_all=yes state=absent
+
+  - name: Creating Wordpress Database.
+    mysql_db: login_host='{{dbhost}}' login_user='{{db_user}}' login_password='{{db_pass}}' db="{{wordpress_db}}" state=present
+
+
+#######################################################################
+# getting Wordpress source
+#######################################################################
+
+
+  - name: Downloading Wodpress.
+    get_url: url=http://www.wordpress.org/latest.tar.gz  dest=/tmp/wordpress.tar
+
+  - name: Extracting wordpress contents.
+    unarchive: src=/tmp/wordpress.tar dest=/tmp/  remote_src=yes
+
+  - name: Copying wordpress contents.
+    shell: "cp -r /tmp/wordpress/*  /var/www/html/"
+
+
+  - name: Copying wp-config.php file.
+    copy: src=/var/www/html/wp-config-sample.php  dest=/var/www/html/wp-config.php remote_src=yes
+
+#######################################################################
+# Cleaning extracted directory and tar file
+#######################################################################
+
+  - name: Removing Wordpress.tar
+    file: path=/tmp/wordpress.tar state=absent
+
+  - name: Removing Wodpress Extracted Directory.
+    file: path=/tmp/wordpress state=absent
+
+#######################################################################
+# Wordpress Configuration
+#######################################################################
+
+  - name: Changing Doc-root permission.
+    shell: 'chown -R apache:apache /var/www/html/'
+    args:
+     warn: false # set warn=false to prevent warning
+
+  - name: Update WordPress config file
+    replace:
+      path: "/var/www/html/wp-config.php"
+      regexp: 'database_name_here'
+      replace: '{{wordpress_db}}'
+
+  - name: Update WordPress config file
+    replace:
+      path: "/var/www/html/wp-config.php"
+      regexp: 'username_here'
+      replace: '{{db_user}}'
+
+  - name: Update WordPress config file
+    replace:
+      path: "/var/www/html/wp-config.php"
+      regexp: 'password_here'
+      replace: '{{db_pass}}'
+
+  - name: Update WordPress config file
+    replace:
+      path: "/var/www/html/wp-config.php"
+      regexp: 'localhost'
+      replace: '{{dbhost}}'
+
+
+#######################################################################
+# Final Service Restart
+#######################################################################
+
+  - name: Restarting apache.
+    service: name={{ item }} state=restarted
+    with_items:
+    - httpd

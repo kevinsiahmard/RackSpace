@@ -1,0 +1,7 @@
+access_key = 'your aws key'
+secret_key = 'your aws secret'
+region = 'region'
+key_name = 'key'
+db_root_user = 'db root user'
+db_root_pass = 'db root password'
+
