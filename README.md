@@ -1,4 +1,4 @@
-# RackSpace
+# RackSpace Assessment
 First edit and enter required info in terraform.tfvars file<br/>
 then run: 1- terraform init<br/>
           2- terraform plan -var-file="terraform.tfvars"<br/>
